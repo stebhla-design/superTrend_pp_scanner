@@ -26,13 +26,6 @@ symbols = st.session_state.symbols
 auto_refresh = st.sidebar.checkbox("Enable auto-refresh", value=True)
 refresh_interval = st.sidebar.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
 
-if st.sidebar.button("Reload symbols from CSV"):
-    st.session_state.symbols = load_symbols("ind_nifty500list.csv")
-    symbols = st.session_state.symbols
-
-if st.sidebar.button("Reset scanner"):
-    st.session_state.scan_state = build_state()
-
 if st.sidebar.button("Refresh dashboard"):
     pass
 
@@ -102,7 +95,6 @@ with col2:
 
 if auto_refresh:
     refresh_counter = st_autorefresh(interval=refresh_interval * 1000, key="live_refresh")
-    st.sidebar.write(f"Auto-refresh count: {refresh_counter}")
 
 st.markdown("---")
 
