@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+bin/
+include/
+lib/
+pyvenv.cfg
+*.sqlite
+*.db
+.streamlit/
