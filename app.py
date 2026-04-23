@@ -102,9 +102,9 @@ with col2:
             csv = df_primary.to_csv(index=False).encode("utf-8")
             st.download_button("Download PRIMARY results CSV", data=csv, file_name="nifty500_primary_scan_results.csv", mime="text/csv")
         else:
-            st.info("No PRIMARY signals found yet. Start the scanner or wait for new data.")
+            st.markdown("<p style='color: #FF8C00;'><b>No PRIMARY signals found yet. Start the scanner or wait for new data.</b></p>", unsafe_allow_html=True)
     else:
-        st.info("No live matches found yet. Start the scanner to begin fetching results.")
+        st.markdown("<p style='color: #FF8C00;'><b>No live matches found yet. Start the scanner to begin fetching results.</b></p>", unsafe_allow_html=True)
 
 if auto_refresh:
     refresh_counter = st_autorefresh(interval=refresh_interval * 1000, key="live_refresh")
