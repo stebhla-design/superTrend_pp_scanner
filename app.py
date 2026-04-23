@@ -28,19 +28,8 @@ if "symbols" not in st.session_state:
 state = st.session_state.scan_state
 symbols = st.session_state.symbols
 
-refresh_col1, refresh_col2 = st.columns([3, 1])
-with refresh_col1:
-    st.write("")
-with refresh_col2:
-    st.write("**Settings**")
-    auto_refresh = st.checkbox("Enable auto-refresh", value=True)
-    refresh_interval = st.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
-    if st.button("Refresh dashboard"):
-        pass
+col1, col2, col3 = st.columns([1, 2, 1])
 
-st.markdown("---")
-
-col1, col2 = st.columns([1, 2])
 with col1:
     st.header("Scanner Controls")
     st.write("Use the buttons below to start, stop, or resume the live scan.")
@@ -111,6 +100,13 @@ with col2:
             st.markdown("<p style='color: #FF8C00;'><b>No PRIMARY signals found yet. Start the scanner or wait for new data.</b></p>", unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: #FF8C00;'><b>No live matches found yet. Start the scanner to begin fetching results.</b></p>", unsafe_allow_html=True)
+
+with col3:
+    st.subheader("Settings")
+    auto_refresh = st.checkbox("Enable auto-refresh", value=True)
+    refresh_interval = st.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
+    if st.button("Refresh dashboard"):
+        pass
 
 if auto_refresh:
     refresh_counter = st_autorefresh(interval=refresh_interval * 1000, key="live_refresh")
