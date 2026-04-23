@@ -28,11 +28,17 @@ if "symbols" not in st.session_state:
 state = st.session_state.scan_state
 symbols = st.session_state.symbols
 
-auto_refresh = st.sidebar.checkbox("Enable auto-refresh", value=True)
-refresh_interval = st.sidebar.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
+refresh_col1, refresh_col2 = st.columns([3, 1])
+with refresh_col1:
+    st.write("")
+with refresh_col2:
+    st.write("**Settings**")
+    auto_refresh = st.checkbox("Enable auto-refresh", value=True)
+    refresh_interval = st.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
+    if st.button("Refresh dashboard"):
+        pass
 
-if st.sidebar.button("Refresh dashboard"):
-    pass
+st.markdown("---")
 
 col1, col2 = st.columns([1, 2])
 with col1:
