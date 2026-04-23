@@ -33,6 +33,12 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.header("Scanner Controls")
     st.write("Use the buttons below to start, stop, or resume the live scan.")
+    
+    scanner_type = st.selectbox(
+        "Scanner Type",
+        ["Select One", "Daily Super Trend + Pivot Strategy"]
+    )
+    st.write(f"Selected: **{scanner_type}**")
 
     if st.button("Start scanner"):
         if state["thread"] is None or not state["thread"].is_alive():
