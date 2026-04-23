@@ -281,11 +281,15 @@ def style_signal(value: str) -> str:
     return ""
 
 
+def style_signal_column(series: pd.Series) -> pd.Series:
+    return series.apply(style_signal)
+
+
 def style_results_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     return (
         df.style
         .format({"Close": "{:.2f}", "Prev_Close": "{:.2f}", "%_vs_PP": "{:+.2f}%", "%_vs_R1": "{:+.2f}%", "Target(+10%)": "{:.2f}", "SL(-5%)": "{:.2f}"})
-        .applymap(style_signal, subset=["Signal"])
+        .apply(style_signal_column, subset=["Signal"])
         .set_properties(**{"font-size": "0.92rem", "padding": "0.4rem 0.5rem"})
     )
 
