@@ -79,19 +79,7 @@ with col1:
     st.write(f"Started at: {state['started_at'] or 'N/A'}")
 
 with col2:
-    st.header("Scan summary")
-    st.write(f"Total symbols loaded from CSV: **{len(symbols)}**")
-
-    if len(symbols) == 0:
-        st.error("No symbols were loaded from ind_nifty500list.csv. Please check the CSV file.")
-    else:
-        st.dataframe(
-            pd.DataFrame({
-                "Symbol": symbols,
-                "Index": list(range(1, len(symbols) + 1)),
-            }).head(20),
-            use_container_width=True,
-        )
+    pass
 
 if auto_refresh:
     refresh_counter = st_autorefresh(interval=refresh_interval * 1000, key="live_refresh")
