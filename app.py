@@ -40,40 +40,43 @@ with col1:
     )
     st.write(f"Selected: **{scanner_type}**")
 
-    if st.button("Start scanner"):
-        if state["thread"] is None or not state["thread"].is_alive():
-            if state["index"] >= len(symbols):
-                state.update(build_state())
-            state["stop_event"].clear()
-            state["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            state["status"] = "Starting"
-            thread = threading.Thread(target=run_scan, args=(symbols, state, 2.0))
-            thread.daemon = True
-            state["thread"] = thread
-            thread.start()
-        else:
-            st.warning("Scanner is already running.")
-
-    if st.button("Stop scanner"):
-        if state["thread"] is not None and state["thread"].is_alive():
-            state["stop_event"].set()
-            state["status"] = "Stopping"
-        else:
-            st.warning("Scanner is not currently running.")
-
-    if st.button("Resume scanner"):
-        if state["status"] in ["Stopped", "Paused"] and state["index"] < len(symbols):
+    if scanner_type == "Select One":
+        st.info("Please select a scanner strategy to enable controls.")
+    else:
+        if st.button("Start scanner"):
             if state["thread"] is None or not state["thread"].is_alive():
+                if state["index"] >= len(symbols):
+                    state.update(build_state())
                 state["stop_event"].clear()
-                if state["started_at"] is None:
-                    state["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                state["status"] = "Resuming"
+                state["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                state["status"] = "Starting"
                 thread = threading.Thread(target=run_scan, args=(symbols, state, 2.0))
                 thread.daemon = True
                 state["thread"] = thread
                 thread.start()
-        else:
-            st.warning("No paused scan to resume.")
+            else:
+                st.warning("Scanner is already running.")
+
+        if st.button("Stop scanner"):
+            if state["thread"] is not None and state["thread"].is_alive():
+                state["stop_event"].set()
+                state["status"] = "Stopping"
+            else:
+                st.warning("Scanner is not currently running.")
+
+        if st.button("Resume scanner"):
+            if state["status"] in ["Stopped", "Paused"] and state["index"] < len(symbols):
+                if state["thread"] is None or not state["thread"].is_alive():
+                    state["stop_event"].clear()
+                    if state["started_at"] is None:
+                        state["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    state["status"] = "Resuming"
+                    thread = threading.Thread(target=run_scan, args=(symbols, state, 2.0))
+                    thread.daemon = True
+                    state["thread"] = thread
+                    thread.start()
+            else:
+                st.warning("No paused scan to resume.")
 
     st.markdown("---")
     st.subheader("Scanner status")
