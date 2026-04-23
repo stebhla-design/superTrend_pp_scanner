@@ -221,11 +221,6 @@ def render_sidebar() -> None:
     st.sidebar.markdown(f"**Symbols loaded:** {len(symbols)}")
 
     st.sidebar.markdown("---")
-    st.sidebar.subheader("Trend Filters")
-    st.sidebar.markdown("<small>Current scan focuses on bullish R1 breakouts with SuperTrend directional bias.</small>", unsafe_allow_html=True)
-    st.sidebar.markdown("<small>Additional trend filters can be layered into this panel as needed.</small>", unsafe_allow_html=True)
-
-    st.sidebar.markdown("---")
     st.sidebar.subheader("Actions")
     if st.sidebar.button("Apply scan", key="apply_scan"):
         apply_scan()
