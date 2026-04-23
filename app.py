@@ -14,20 +14,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-header_col1, header_col2 = st.columns([2, 1])
-
-with header_col1:
-    st.markdown(
-        "<h1 style='color: #FF8C00; margin-bottom: 0;'>📊 Nifty Scanner</h1>",
-        unsafe_allow_html=True
-    )
-
-with header_col2:
-    st.write("**Settings**")
-    auto_refresh = st.checkbox("Enable auto-refresh", value=True)
-    refresh_interval = st.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
-    if st.button("Refresh dashboard"):
-        pass
+st.markdown(
+    "<h1 style='color: #FF8C00; margin-bottom: 0;'>📊 Nifty Scanner</h1>",
+    unsafe_allow_html=True
+)
 
 if "scan_state" not in st.session_state:
     st.session_state.scan_state = build_state()
@@ -37,6 +27,12 @@ if "symbols" not in st.session_state:
 
 state = st.session_state.scan_state
 symbols = st.session_state.symbols
+
+auto_refresh = st.sidebar.checkbox("Enable auto-refresh", value=True)
+refresh_interval = st.sidebar.number_input("Refresh every (seconds)", min_value=2, max_value=60, value=10, step=1)
+
+if st.sidebar.button("Refresh dashboard"):
+    pass
 
 col1, col2 = st.columns([1, 2])
 with col1:
