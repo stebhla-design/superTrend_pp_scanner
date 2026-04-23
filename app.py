@@ -14,6 +14,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown(
+    "<h1 style='color: #FF8C00; margin-bottom: 0;'>📊 Nifty Scanner</h1>",
+    unsafe_allow_html=True
+)
+
 if "scan_state" not in st.session_state:
     st.session_state.scan_state = build_state()
 
