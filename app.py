@@ -226,19 +226,6 @@ def render_sidebar() -> None:
     st.sidebar.markdown("<small>Additional trend filters can be layered into this panel as needed.</small>", unsafe_allow_html=True)
 
     st.sidebar.markdown("---")
-    st.sidebar.subheader("Refresh & Scan Timing")
-    st.sidebar.checkbox("Auto-refresh dashboard", key="auto_refresh")
-    st.sidebar.number_input(
-        "Refresh interval (sec)",
-        min_value=2,
-        max_value=60,
-        value=st.session_state.refresh_interval,
-        step=1,
-        key="refresh_interval",
-    )
-    st.sidebar.markdown("<small>Auto-refresh updates the scan table without navigating away.</small>", unsafe_allow_html=True)
-
-    st.sidebar.markdown("---")
     st.sidebar.subheader("Actions")
     if st.sidebar.button("Apply scan", key="apply_scan"):
         apply_scan()
@@ -263,6 +250,19 @@ def render_sidebar() -> None:
                 thread.start()
         else:
             st.sidebar.warning("No paused scan to resume.")
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Refresh & Scan Timing")
+    st.sidebar.checkbox("Auto-refresh dashboard", key="auto_refresh")
+    st.sidebar.number_input(
+        "Refresh interval (sec)",
+        min_value=2,
+        max_value=60,
+        value=st.session_state.refresh_interval,
+        step=1,
+        key="refresh_interval",
+    )
+    st.sidebar.markdown("<small>Auto-refresh updates the scan table without navigating away.</small>", unsafe_allow_html=True)
 
     st.sidebar.markdown("---")
     if st.sidebar.button("Reset filters", key="reset_filters"):
