@@ -28,7 +28,7 @@ if "symbols" not in st.session_state:
 state = st.session_state.scan_state
 symbols = st.session_state.symbols
 
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3 = st.columns([1, 1, 1])
 
 with col1:
     st.header("Scanner Controls")
