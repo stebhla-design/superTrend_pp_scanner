@@ -79,26 +79,22 @@ with col1:
     st.write(f"Started at: {state['started_at'] or 'N/A'}")
 
 with col2:
-    pass
+    st.subheader("Live scan results — PRIMARY signals only")
+    if state["results"]:
+        df_results = pd.DataFrame(state["results"])
+        df_primary = df_results[df_results["Signal"].str.contains("PRIMARY")].copy()
+        if not df_primary.empty:
+            df_primary = df_primary.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
+            st.dataframe(df_primary, use_container_width=True)
+            csv = df_primary.to_csv(index=False).encode("utf-8")
+            st.download_button("Download PRIMARY results CSV", data=csv, file_name="nifty500_primary_scan_results.csv", mime="text/csv")
+        else:
+            st.info("No PRIMARY signals found yet. Start the scanner or wait for new data.")
+    else:
+        st.info("No live matches found yet. Start the scanner to begin fetching results.")
 
 if auto_refresh:
     refresh_counter = st_autorefresh(interval=refresh_interval * 1000, key="live_refresh")
-
-st.markdown("---")
-
-st.subheader("Live scan results — PRIMARY signals only")
-if state["results"]:
-    df_results = pd.DataFrame(state["results"])
-    df_primary = df_results[df_results["Signal"].str.contains("PRIMARY")].copy()
-    if not df_primary.empty:
-        df_primary = df_primary.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
-        st.dataframe(df_primary, use_container_width=True)
-        csv = df_primary.to_csv(index=False).encode("utf-8")
-        st.download_button("Download PRIMARY results CSV", data=csv, file_name="nifty500_primary_scan_results.csv", mime="text/csv")
-    else:
-        st.info("No PRIMARY signals found yet. Start the scanner or wait for new data.")
-else:
-    st.info("No live matches found yet. Start the scanner to begin fetching results.")
 
 st.markdown("---")
 
