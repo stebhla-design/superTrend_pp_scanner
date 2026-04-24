@@ -34,9 +34,20 @@ body, .main, .block-container {
     padding: 0.7rem 1rem !important;
     border: none !important;
     box-shadow: 0 14px 30px rgba(14, 165, 233, 0.15) !important;
+    margin: 0.18rem 0 !important;
 }
 .stButton>button:hover {
     background-color: #22d3ee !important;
+}
+.tight-divider {
+    margin: 0.35rem 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+.sidebar-section-title {
+    margin: 0.25rem 0 0.35rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
 }
 .metric-card, .panel-card {
     background: #111827;
@@ -48,7 +59,7 @@ body, .main, .block-container {
 .metric-card .metric-label {
     color: #94a3b8;
     font-size: 0.9rem;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
 }
 .metric-card .metric-value {
     color: #f8fafc;
@@ -57,7 +68,7 @@ body, .main, .block-container {
 }
 .metric-card .metric-note {
     color: #94a3b8;
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
     font-size: 0.85rem;
 }
 .dashboard-title {
@@ -69,7 +80,7 @@ body, .main, .block-container {
 .dashboard-subtitle {
     color: #cbd5e1;
     margin-top: 0;
-    margin-bottom: 0.95rem;
+    margin-bottom: 0.5rem;
     font-size: 1rem;
     line-height: 1.6;
 }
@@ -100,7 +111,7 @@ body, .main, .block-container {
 .table-title {
     color: #cbd5e1;
     font-size: 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 [data-testid="stDataFrame"] {
     border-radius: 18px;
@@ -115,6 +126,9 @@ body, .main, .block-container {
 }
 [data-testid="stDataFrame"] td {
     color: #e2e8f0;
+}
+hr {
+    margin: 0.5rem 0;
 }
 </style>
 """
@@ -160,7 +174,7 @@ def format_kpi(label: str, value: str, note: str) -> str:
 def render_header() -> None:
     market_status, status_color = get_market_status()
     last_update = state["last_update"] or "Pending"
-    header_left, header_right = st.columns([3, 1], gap="large")
+    header_left, header_right = st.columns([3, 1], gap="small")
 
     with header_left:
         st.markdown("<div class='dashboard-title'>Nifty 500 SuperTrend Scanner</div>", unsafe_allow_html=True)
@@ -170,7 +184,7 @@ def render_header() -> None:
         )
         st.markdown(
             f"<div class='status-pill' style='background:{status_color};'>Market {market_status}</div>"
-            f" <span style='color:#94a3b8; margin-left:1rem;'>Last updated: {last_update}</span>",
+            f" <span style='color:#94a3b8; margin-left:0.5rem;'>Last updated: {last_update}</span>",
             unsafe_allow_html=True,
         )
 
@@ -179,7 +193,7 @@ def render_header() -> None:
             if hasattr(st, "experimental_rerun"):
                 st.experimental_rerun()
         st.markdown(
-            "<div style='margin-top:0.75rem; color:#94a3b8;'>Use the sidebar to control scan settings, refresh cadence, and scan actions.</div>",
+            "<div style='margin-top:0.35rem; color:#94a3b8;'>Use the sidebar to control scan settings, refresh cadence, and scan actions.</div>",
             unsafe_allow_html=True,
         )
 
@@ -211,8 +225,8 @@ def reset_filters() -> None:
 
 def render_sidebar() -> None:
     st.sidebar.title("Scan Controls")
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Market / Universe")
+    st.sidebar.markdown("<hr class='tight-divider'/>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div class='sidebar-section-title'>Market / Universe</div>", unsafe_allow_html=True)
     st.sidebar.selectbox(
         "Scanner strategy",
         ["Select One", "Daily Super Trend + Pivot Strategy"],
@@ -220,8 +234,8 @@ def render_sidebar() -> None:
     )
     st.sidebar.markdown(f"**Symbols loaded:** {len(symbols)}")
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Actions")
+    st.sidebar.markdown("<hr class='tight-divider'/>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div class='sidebar-section-title'>Actions</div>", unsafe_allow_html=True)
     if st.sidebar.button("Apply scan", key="apply_scan"):
         apply_scan()
     if st.sidebar.button("Start scan", key="start_scan"):
@@ -246,8 +260,8 @@ def render_sidebar() -> None:
         else:
             st.sidebar.warning("No paused scan to resume.")
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Refresh & Scan Timing")
+    st.sidebar.markdown("<hr class='tight-divider'/>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div class='sidebar-section-title'>Refresh & Scan Timing</div>", unsafe_allow_html=True)
     st.sidebar.checkbox("Auto-refresh dashboard", key="auto_refresh")
     st.sidebar.number_input(
         "Refresh interval (sec)",
@@ -259,7 +273,7 @@ def render_sidebar() -> None:
     )
     st.sidebar.markdown("<small>Auto-refresh updates the scan table without navigating away.</small>", unsafe_allow_html=True)
 
-    st.sidebar.markdown("---")
+    st.sidebar.markdown("<hr class='tight-divider'/>", unsafe_allow_html=True)
     if st.sidebar.button("Reset filters", key="reset_filters"):
         reset_filters()
     st.sidebar.markdown("<small>Reset sidebar selections to defaults.</small>", unsafe_allow_html=True)
@@ -310,7 +324,7 @@ def render_results_tab() -> None:
         return
 
     filtered = filtered.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
-    left, right = st.columns([3, 1], gap="large")
+    left, right = st.columns([3, 1], gap="small")
 
     with left:
         styled = style_results_table(filtered)
@@ -335,7 +349,7 @@ def render_results_tab() -> None:
         st.markdown(f"<div>Target: <strong>{record['Target(+10%)']:.2f}</strong> | SL: <strong>{record['SL(-5%)']:.2f}</strong></div>")
         st.markdown(f"<div>% vs R1: <strong>{record['%_vs_R1']:+.2f}%</strong></div>")
         st.markdown(f"<div>% vs PP: <strong>{record['%_vs_PP']:+.2f}%</strong></div>")
-        st.markdown("<div style='margin-top:1rem; color:#94a3b8;'>This signal identifies a fresh R1 crossover in the latest candle.</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:0.35rem; color:#94a3b8;'>This signal identifies a fresh R1 crossover in the latest candle.</div>", unsafe_allow_html=True)
         st.markdown("<div class='badge badge-info'>Bullish setup</div>", unsafe_allow_html=True)
 
 
@@ -347,7 +361,7 @@ def render_signal_summary_tab() -> None:
 
     primary_count = len(df_results[df_results["Signal"].str.contains("PRIMARY", na=False)])
     total_processed = state["processed"]
-    summary_columns = st.columns(3, gap="large")
+    summary_columns = st.columns(3, gap="small")
     summary_columns[0].metric("Signals found", primary_count)
     summary_columns[1].metric("Total scanned", total_processed)
     summary_columns[2].metric("Remaining", max(0, len(symbols) - total_processed))
