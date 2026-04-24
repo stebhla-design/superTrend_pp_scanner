@@ -282,7 +282,7 @@ def render_sidebar() -> None:
 def style_signal(value: str) -> str:
     if isinstance(value, str):
         if "PRIMARY" in value:
-            return "color: #4ade80; font-weight: 700;"
+            return "background-color: rgba(74, 222, 128, 0.15); color: #4ade80; font-weight: 800; border-radius: 4px; padding: 0.2rem 0.4rem; border: 1px solid rgba(74, 222, 128, 0.3);"
         if "ABOVE R1" in value:
             return "color: #38bdf8; font-weight: 600;"
         if "SECONDARY" in value:
@@ -376,8 +376,8 @@ def render_results_tab() -> None:
         query = search_value.strip().upper()
         filtered = filtered[filtered["Symbol"].str.contains(query) | filtered["Signal"].str.contains(query)]
 
-    summary_text = f"{len(filtered)} PRIMARY matches out of {len(symbols)} symbols scanned."
-    st.markdown(f"<div class='table-title'>{summary_text}</div>", unsafe_allow_html=True)
+    summary_text = f"🔥 {len(filtered)} PRIMARY matches out of {len(symbols)} symbols scanned."
+    st.markdown(f"<div class='table-title' style='color:#4ade80; font-weight: bold; font-size: 1.1rem;'>{summary_text}</div>", unsafe_allow_html=True)
 
     if filtered.empty:
         st.markdown(
@@ -421,7 +421,7 @@ def render_signal_summary_tab() -> None:
     primary_count = len(df_results[df_results["Signal"].str.contains("PRIMARY", na=False)])
     total_processed = state["processed"]
     summary_columns = st.columns(3, gap="small")
-    summary_columns[0].metric("Signals found", primary_count)
+    summary_columns[0].metric("🔥 PRIMARY Signals", primary_count)
     summary_columns[1].metric("Total scanned", total_processed)
     summary_columns[2].metric("Remaining", max(0, len(symbols) - total_processed))
 
@@ -453,10 +453,12 @@ render_header()
 if st.session_state.auto_refresh:
     st_autorefresh(interval=st.session_state.refresh_interval * 1000, key="live_refresh")
 
+primary_count_kpi = len([r for r in state['results'] if isinstance(r, dict) and "PRIMARY" in r.get("Signal", "")])
+
 kpi1 = format_kpi("Universe", f"{len(symbols)}", "Total Nifty 500 symbols")
 kpi2 = format_kpi("Processed", f"{state['processed']} / {len(symbols)}", "Symbols scanned so far")
-kpi3 = format_kpi("Matches", f"{len(state['results'])}", "Primary signals captured")
-kpi4 = format_kpi("Strong setups", f"{len(state['results'])}", "Fresh bullish breakouts")
+kpi3 = format_kpi("🔥 PRIMARY Matches", f"{primary_count_kpi}", "Bullish PRIMARY breakouts")
+kpi4 = format_kpi("Total Captures", f"{len(state['results'])}", "All signals captured")
 
 cols = st.columns(4, gap="large")
 for index, markup in enumerate([kpi1, kpi2, kpi3, kpi4]):
