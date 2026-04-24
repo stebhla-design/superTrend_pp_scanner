@@ -324,33 +324,15 @@ def render_results_tab() -> None:
         return
 
     filtered = filtered.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
-    left, right = st.columns([3, 1], gap="small")
-
-    with left:
-        styled = style_results_table(filtered)
-        st.dataframe(styled, use_container_width=True)
-        csv = filtered.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "Download PRIMARY results CSV",
-            data=csv,
-            file_name="nifty500_primary_scan_results.csv",
-            mime="text/csv",
-        )
-
-    with right:
-        symbol_list = filtered["Symbol"].tolist()
-        selected_symbol = st.selectbox("Selected symbol", options=symbol_list)
-        record = filtered[filtered["Symbol"] == selected_symbol].iloc[0]
-        st.markdown("<div class='panel-card'><h4>Selected setup</h4></div>", unsafe_allow_html=True)
-        st.markdown(f"<div><strong>{record['Symbol']}</strong> — {record['Signal']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div>Close: <strong>{record['Close']:.2f}</strong></div>")
-        st.markdown(f"<div>Pivot PP: <strong>{record['Pivot(PP)']:.2f}</strong></div>")
-        st.markdown(f"<div>R1: <strong>{record['R1']:.2f}</strong> | R2: <strong>{record['R2']:.2f}</strong></div>")
-        st.markdown(f"<div>Target: <strong>{record['Target(+10%)']:.2f}</strong> | SL: <strong>{record['SL(-5%)']:.2f}</strong></div>")
-        st.markdown(f"<div>% vs R1: <strong>{record['%_vs_R1']:+.2f}%</strong></div>")
-        st.markdown(f"<div>% vs PP: <strong>{record['%_vs_PP']:+.2f}%</strong></div>")
-        st.markdown("<div style='margin-top:0.35rem; color:#94a3b8;'>This signal identifies a fresh R1 crossover in the latest candle.</div>", unsafe_allow_html=True)
-        st.markdown("<div class='badge badge-info'>Bullish setup</div>", unsafe_allow_html=True)
+    styled = style_results_table(filtered)
+    st.dataframe(styled, use_container_width=True)
+    csv = filtered.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download PRIMARY results CSV",
+        data=csv,
+        file_name="nifty500_primary_scan_results.csv",
+        mime="text/csv",
+    )
 
 
 def render_signal_summary_tab() -> None:
