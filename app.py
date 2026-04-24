@@ -294,6 +294,57 @@ def style_signal_column(series: pd.Series) -> pd.Series:
     return series.apply(style_signal)
 
 
+def get_tradingview_link(symbol: str) -> str:
+    if symbol.endswith(".NS"):
+        ticker = symbol[:-3]
+        return f"https://www.tradingview.com/symbols/NSE-{ticker}/"
+    if symbol.endswith(".BO"):
+        ticker = symbol[:-3]
+        return f"https://www.tradingview.com/symbols/BOM-{ticker}/"
+    safe_symbol = symbol.replace(".", "-")
+    return f"https://www.tradingview.com/symbols/{safe_symbol}/"
+
+
+def render_tradingview_widget(symbol: str) -> None:
+    if not symbol:
+        return
+
+    if symbol.endswith(".NS"):
+        market = "NSE"
+        code = symbol[:-3]
+    elif symbol.endswith(".BO"):
+        market = "BOM"
+        code = symbol[:-3]
+    else:
+        market = ""
+        code = symbol
+
+    tv_symbol = f"{market}:{code}" if market else code
+    safe_id = symbol.replace(".", "-").replace(":", "-")
+    chart_html = f"""
+    <div class='tradingview-widget-container' style='height: 520px;'>
+      <div id='tradingview_{safe_id}'></div>
+      <script type='text/javascript' src='https://s3.tradingview.com/tv.js'></script>
+      <script type='text/javascript'>
+      new TradingView.widget({{
+        "autosize": true,
+        "symbol": "{tv_symbol}",
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#0f1720",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_{safe_id}"
+      }});
+      </script>
+    </div>
+    """
+    st.components.v1.html(chart_html, height=540, scrolling=False)
+
+
 def style_results_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     return (
         df.style
@@ -324,8 +375,14 @@ def render_results_tab() -> None:
         return
 
     filtered = filtered.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
-    styled = style_results_table(filtered)
-    st.dataframe(styled, use_container_width=True)
+    display_df = filtered.copy()
+    display_df["Symbol"] = display_df["Symbol"].apply(
+        lambda s: f"<a href='{get_tradingview_link(s)}' target='_blank'>{s}</a>"
+    )
+
+    styled = style_results_table(display_df)
+    st.markdown(styled.to_html(escape=False), unsafe_allow_html=True)
+
     csv = filtered.to_csv(index=False).encode("utf-8")
     st.download_button(
         "Download PRIMARY results CSV",
@@ -333,6 +390,14 @@ def render_results_tab() -> None:
         file_name="nifty500_primary_scan_results.csv",
         mime="text/csv",
     )
+
+    chart_symbol = st.selectbox(
+        "Embedded TradingView chart for",
+        filtered["Symbol"].tolist(),
+        index=0,
+        key="tv_chart_symbol",
+    )
+    render_tradingview_widget(chart_symbol)
 
 
 def render_signal_summary_tab() -> None:
