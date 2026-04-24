@@ -334,7 +334,7 @@ def render_tradingview_widget(symbol: str) -> None:
     tv_symbol = normalize_tradingview_symbol(symbol)
     safe_id = symbol.replace(".", "-").replace(":", "-").replace("_", "-")
     chart_html = f"""
-    <div class='tradingview-widget-container' style='width: 100%; height: 1200px;'>
+    <div class='tradingview-widget-container' style='width: 100%; height: 900px;'>
       <div id='tradingview_{safe_id}' style='width: 100%; height: 100%;'></div>
       <script type='text/javascript' src='https://s3.tradingview.com/tv.js'></script>
       <script type='text/javascript'>
@@ -354,7 +354,7 @@ def render_tradingview_widget(symbol: str) -> None:
       </script>
     </div>
     """
-    st.components.v1.html(chart_html, height=1220, scrolling=False)
+    st.components.v1.html(chart_html, height=900, scrolling=False)
 
 
 def style_results_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
