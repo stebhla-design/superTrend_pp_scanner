@@ -294,33 +294,55 @@ def style_signal_column(series: pd.Series) -> pd.Series:
     return series.apply(style_signal)
 
 
-def get_tradingview_link(symbol: str) -> str:
+TRADINGVIEW_SYMBOL_OVERRIDES = {
+    "BAJAJ-AUTO.NS": "NSE:BAJAJ_AUTO",
+    "BAJAJ-AUTO.BO": "BOM:BAJAJ_AUTO",
+    "M&M.NS": "NSE:MM",
+    "M&M.BO": "BOM:MM",
+    "L&T.NS": "NSE:LT",
+    "L&T.BO": "BOM:LT",
+    "B&G.NS": "NSE:BG",
+    "B&G.BO": "BOM:BG",
+    "M&M FIN.NS": "NSE:MMFIN",
+    "M&M FIN.BO": "BOM:MMFIN",
+}
+
+
+def normalize_tradingview_symbol(symbol: str) -> str:
+    if symbol in TRADINGVIEW_SYMBOL_OVERRIDES:
+        return TRADINGVIEW_SYMBOL_OVERRIDES[symbol]
+    
     if symbol.endswith(".NS"):
-        ticker = symbol[:-3]
-        return f"https://www.tradingview.com/symbols/NSE-{ticker}/"
+        ticker = symbol[:-3].replace("-", "_")
+        return f"NSE:{ticker}"
     if symbol.endswith(".BO"):
-        ticker = symbol[:-3]
-        return f"https://www.tradingview.com/symbols/BOM-{ticker}/"
-    safe_symbol = symbol.replace(".", "-")
-    return f"https://www.tradingview.com/symbols/{safe_symbol}/"
+        ticker = symbol[:-3].replace("-", "_")
+        return f"BOM:{ticker}"
+    
+    return symbol.replace("-", "_")
+
+
+def get_tradingview_link(symbol: str) -> str:
+    normalized = normalize_tradingview_symbol(symbol)
+    exchange_prefix = ""
+    ticker = normalized
+    
+    if ":" in normalized:
+        parts = normalized.split(":")
+        exchange_prefix = parts[0]
+        ticker = parts[1]
+    
+    if exchange_prefix:
+        return f"https://www.tradingview.com/symbols/{exchange_prefix}-{ticker}/"
+    return f"https://www.tradingview.com/symbols/{ticker}/"
 
 
 def render_tradingview_widget(symbol: str) -> None:
     if not symbol:
         return
 
-    if symbol.endswith(".NS"):
-        market = "NSE"
-        code = symbol[:-3]
-    elif symbol.endswith(".BO"):
-        market = "BOM"
-        code = symbol[:-3]
-    else:
-        market = ""
-        code = symbol
-
-    tv_symbol = f"{market}:{code}" if market else code
-    safe_id = symbol.replace(".", "-").replace(":", "-")
+    tv_symbol = normalize_tradingview_symbol(symbol)
+    safe_id = symbol.replace(".", "-").replace(":", "-").replace("_", "-")
     chart_html = f"""
     <div class='tradingview-widget-container' style='height: 520px;'>
       <div id='tradingview_{safe_id}'></div>
