@@ -324,17 +324,7 @@ def normalize_tradingview_symbol(symbol: str) -> str:
 
 def get_tradingview_link(symbol: str) -> str:
     normalized = normalize_tradingview_symbol(symbol)
-    exchange_prefix = ""
-    ticker = normalized
-    
-    if ":" in normalized:
-        parts = normalized.split(":")
-        exchange_prefix = parts[0]
-        ticker = parts[1]
-    
-    if exchange_prefix:
-        return f"https://www.tradingview.com/symbols/{exchange_prefix}-{ticker}/"
-    return f"https://www.tradingview.com/symbols/{ticker}/"
+    return f"https://www.tradingview.com/chart/?symbol={normalized}"
 
 
 def render_tradingview_widget(symbol: str) -> None:
