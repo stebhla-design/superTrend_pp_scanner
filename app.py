@@ -209,6 +209,15 @@ def apply_scan() -> None:
         state["stop_event"].clear()
         state["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         state["status"] = "Starting"
+        state["scanner_type"] = st.session_state.scanner_type
+        state["scanner_params"] = {
+            "period": st.session_state.get("st_period", 10),
+            "multiplier": st.session_state.get("st_multiplier", 3.0),
+            "target_pct": st.session_state.get("target_pct", 30.0),
+            "rsi_period": st.session_state.get("rsi_period", 14),
+            "rsi_threshold": st.session_state.get("rsi_threshold", 60.0),
+            "crossover_only": st.session_state.get("crossover_only", True),
+        }
         thread = threading.Thread(target=run_scan, args=(symbols, state, 2.0))
         thread.daemon = True
         state["thread"] = thread
@@ -229,9 +238,10 @@ def render_sidebar() -> None:
     st.sidebar.markdown("<div class='sidebar-section-title'>Market / Universe</div>", unsafe_allow_html=True)
     st.sidebar.selectbox(
         "Scanner strategy",
-        ["Select One", "Daily Super Trend + Pivot Strategy"],
+        ["Select One", "Daily Super Trend + Pivot Strategy", "Weekly Supertrend + RSI"],
         key="scanner_type",
     )
+
     st.sidebar.markdown(f"**Symbols loaded:** {len(symbols)}")
 
     st.sidebar.markdown("<hr class='tight-divider'/>", unsafe_allow_html=True)
@@ -357,36 +367,55 @@ def render_tradingview_widget(symbol: str) -> None:
     st.components.v1.html(chart_html, height=900, scrolling=False)
 
 
-def style_results_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
-    return (
-        df.style
-        .format({"Close": "{:.2f}", "Prev_Close": "{:.2f}", "%_vs_PP": "{:+.2f}%", "%_vs_R1": "{:+.2f}%", "Target(+10%)": "{:.2f}", "SL(-5%)": "{:.2f}"})
-        .apply(style_signal_column, subset=["Signal"])
-        .set_properties(**{"font-size": "0.92rem", "padding": "0.4rem 0.5rem"})
-    )
+def style_results_table(df: pd.DataFrame):
+    format_dict = {}
+    for col, fmt in {
+        "Close": "{:.2f}", "Prev_Close": "{:.2f}", "%_vs_PP": "{:+.2f}%", 
+        "%_vs_R1": "{:+.2f}%", "Target(+10%)": "{:.2f}", "SL(-5%)": "{:.2f}",
+        "Target": "{:.2f}", "SL": "{:.2f}", "RSI(W)": "{:.2f}", 
+        "Risk": "{:.2f}", "Reward": "{:.2f}", "R:R Ratio": "{:.2f}",
+        "%_Above_ST": "{:+.2f}%"
+    }.items():
+        if col in df.columns:
+            format_dict[col] = fmt
+            
+    styler = df.style.format(format_dict)
+    if "Signal" in df.columns:
+        styler = styler.apply(style_signal_column, subset=["Signal"])
+        
+    return styler.set_properties(**{"font-size": "0.92rem", "padding": "0.4rem 0.5rem"})
 
 
 def render_results_tab() -> None:
     df_results = pd.DataFrame(state["results"])
-    df_primary = df_results[df_results["Signal"].str.contains("PRIMARY", na=False)].copy() if not df_results.empty else pd.DataFrame()
-    filtered = df_primary
+    
+    if state.get("scanner_type") == "Weekly Supertrend + RSI" and not state.get("scanner_params", {}).get("crossover_only", True):
+        filtered = df_results.copy() if not df_results.empty else pd.DataFrame()
+        summary_text = f"🔥 {len(filtered)} matches out of {len(symbols)} symbols scanned."
+    else:
+        df_primary = df_results[df_results["Signal"].str.contains("PRIMARY", na=False)].copy() if not df_results.empty else pd.DataFrame()
+        filtered = df_primary
+        summary_text = f"🔥 {len(filtered)} PRIMARY matches out of {len(symbols)} symbols scanned."
 
     search_value = st.text_input("Search symbols or signal", value="", placeholder="Search symbol, signal, or target")
     if search_value and not filtered.empty:
         query = search_value.strip().upper()
         filtered = filtered[filtered["Symbol"].str.contains(query) | filtered["Signal"].str.contains(query)]
 
-    summary_text = f"🔥 {len(filtered)} PRIMARY matches out of {len(symbols)} symbols scanned."
     st.markdown(f"<div class='table-title' style='color:#4ade80; font-weight: bold; font-size: 1.1rem;'>{summary_text}</div>", unsafe_allow_html=True)
 
     if filtered.empty:
         st.markdown(
-            "<div class='panel-card'><strong>No PRIMARY signals found yet.</strong> Start the scan or wait for a fresh cycle.</div>",
+            "<div class='panel-card'><strong>No signals found yet.</strong> Start the scan or wait for a fresh cycle.</div>",
             unsafe_allow_html=True,
         )
         return
 
-    filtered = filtered.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
+    if state.get("scanner_type") == "Weekly Supertrend + RSI":
+        filtered = filtered.sort_values(by=["R:R Ratio", "%_Above_ST"], ascending=[True, False])
+    else:
+        filtered = filtered.sort_values(by=["%_vs_R1", "%_vs_PP"], ascending=[False, False])
+        
     display_df = filtered.copy()
     display_df["Symbol"] = display_df["Symbol"].apply(
         lambda s: f"<a href='{get_tradingview_link(s)}' target='_blank'>{s}</a>"

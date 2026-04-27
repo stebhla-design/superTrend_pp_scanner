@@ -235,12 +235,169 @@ def analyse(symbol: str) -> dict | None:
     }
 
 
+def compute_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> pd.DataFrame:
+    df = df.copy()
+    hl  = df["High"] - df["Low"]
+    hpc = (df["High"] - df["Close"].shift(1)).abs()
+    lpc = (df["Low"]  - df["Close"].shift(1)).abs()
+    tr  = pd.concat([hl, hpc, lpc], axis=1).max(axis=1)
+    df["ATR"] = tr.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
+
+    hl2         = (df["High"] + df["Low"]) / 2
+    basic_upper = (hl2 + multiplier * df["ATR"]).values.copy()
+    basic_lower = (hl2 - multiplier * df["ATR"]).values.copy()
+    close       = df["Close"].values
+
+    upper = basic_upper.copy()
+    lower = basic_lower.copy()
+    for i in range(1, len(df)):
+        upper[i] = min(upper[i], upper[i-1]) if close[i-1] <= upper[i-1] else upper[i]
+        lower[i] = max(lower[i], lower[i-1]) if close[i-1] >= lower[i-1] else lower[i]
+
+    df["UpperBand"] = upper
+    df["LowerBand"] = lower
+
+    supertrend = np.full(len(df), np.nan)
+    trend      = np.zeros(len(df), dtype=int)
+
+    for i in range(1, len(df)):
+        if np.isnan(supertrend[i-1]):
+            supertrend[i] = upper[i]; trend[i] = -1; continue
+
+        if supertrend[i-1] == upper[i-1]:
+            if close[i] <= upper[i-1]:
+                supertrend[i] = upper[i]; trend[i] = -1
+            else:
+                supertrend[i] = lower[i]; trend[i] =  1
+        else:
+            if close[i] >= lower[i-1]:
+                supertrend[i] = lower[i]; trend[i] =  1
+            else:
+                supertrend[i] = upper[i]; trend[i] = -1
+
+    df["Supertrend"] = supertrend
+    df["Trend"]      = trend
+    return df
+
+
+def compute_rsi(df: pd.DataFrame, rsi_period: int = 14) -> pd.DataFrame:
+    df = df.copy()
+    delta = df["Close"].diff()
+    gain  = delta.clip(lower=0)
+    loss  = (-delta).clip(lower=0)
+
+    avg_gain = gain.ewm(alpha=1 / rsi_period, min_periods=rsi_period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1 / rsi_period, min_periods=rsi_period, adjust=False).mean()
+
+    rs        = avg_gain / avg_loss.replace(0, np.nan)
+    df["RSI"] = (100 - (100 / (1 + rs))).round(2)
+    return df
+
+
+def fetch_ohlc_weekly(symbol: str) -> pd.DataFrame | None:
+    ticker = f"{symbol}.NS"
+    end = datetime.today() + timedelta(days=1)
+    start = end - timedelta(weeks=170)
+
+    try:
+        raw = yf.download(
+            ticker,
+            start=start.strftime("%Y-%m-%d"),
+            end=end.strftime("%Y-%m-%d"),
+            interval="1wk",
+            progress=False,
+            auto_adjust=True,
+            actions=False,
+        )
+
+        if raw is None or raw.empty:
+            return None
+
+        if isinstance(raw.columns, pd.MultiIndex):
+            raw.columns = [c[0] for c in raw.columns]
+
+        needed = ["High", "Low", "Close"]
+        if not all(c in raw.columns for c in needed):
+            return None
+
+        df = raw[needed].dropna().copy()
+        df.index = pd.to_datetime(df.index).tz_localize(None)
+        return df
+    except Exception:
+        return None
+
+
+def analyse_weekly(symbol: str, params: dict) -> dict | None:
+    df = fetch_ohlc_weekly(symbol)
+    period = params.get("period", 10)
+    multiplier = params.get("multiplier", 3.0)
+    target_pct = params.get("target_pct", 30.0)
+    rsi_period = params.get("rsi_period", 14)
+    rsi_threshold = params.get("rsi_threshold", 60.0)
+    crossover_only = params.get("crossover_only", True)
+
+    if df is None or df.empty or len(df) < max(11, rsi_period + 1):
+        return None
+
+    df = compute_supertrend(df, period=period, multiplier=multiplier)
+    df = compute_rsi(df, rsi_period=rsi_period)
+    df = df.dropna(subset=["Supertrend", "RSI"])
+    if len(df) < 2:
+        return None
+
+    latest = df.iloc[-1]
+    prev   = df.iloc[-2]
+
+    if int(latest["Trend"]) != 1:
+        return None
+
+    rsi_val = float(latest["RSI"])
+    if rsi_val <= rsi_threshold:
+        return None
+
+    crossover = int(prev["Trend"]) == -1
+    if crossover_only and not crossover:
+        return None
+
+    close      = float(latest["Close"])
+    st_val     = float(latest["Supertrend"])
+    target     = round(close * (1 + target_pct / 100), 2)
+    stop_loss  = round(st_val, 2)
+    risk       = round(close - stop_loss, 2)
+    reward     = round(target - close, 2)
+    rr_ratio   = round(reward / risk, 2) if risk > 0 else 999.0
+    pct_above  = round((close / st_val - 1) * 100, 2)
+
+    return {
+        "Symbol": symbol,
+        "Date": latest.name.strftime("%Y-%m-%d"),
+        "Close": round(close, 2),
+        "Prev_Close": round(float(prev["Close"]), 2),
+        "ST_Line": stop_loss,
+        "Signal": "PRIMARY ✅" if crossover else "SECONDARY 🟡",
+        "RSI(W)": rsi_val,
+        "Target": target,
+        "SL": stop_loss,
+        "Risk": risk,
+        "Reward": reward,
+        "R:R Ratio": rr_ratio,
+        "%_Above_ST": pct_above,
+    }
+
+
 def run_scan(symbols: list[str], state: dict, delay: float = 2.0) -> None:
+    scanner_type = state.get("scanner_type", "Daily Super Trend + Pivot Strategy")
+    params = state.get("scanner_params", {})
+
     while state["index"] < len(symbols) and not state["stop_event"].is_set():
         symbol = symbols[state["index"]]
         state["current_symbol"] = symbol
         state["status"] = "Scanning"
-        result = analyse(symbol)
+        
+        if scanner_type == "Weekly Supertrend + RSI":
+            result = analyse_weekly(symbol, params)
+        else:
+            result = analyse(symbol)
 
         if result is not None:
             state["results"].append(result)
@@ -272,4 +429,6 @@ def build_state() -> dict:
         "last_update": None,
         "stop_event": threading.Event(),
         "thread": None,
+        "scanner_type": "Select One",
+        "scanner_params": {},
     }
